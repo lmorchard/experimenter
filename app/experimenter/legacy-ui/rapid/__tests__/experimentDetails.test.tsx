@@ -380,7 +380,7 @@ describe("<ExperimentDetails />", () => {
 
   it("polls fetchExperiment after timeout", async () => {
     await act(async () => {
-      fetchMock.mockOnce(async () => {
+      fetchMock.mockResponse(async () => {
         return JSON.stringify({
           status: ExperimentStatus.REVIEW,
           slug: "test-slug",

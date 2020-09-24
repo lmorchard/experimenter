@@ -33,7 +33,7 @@ describe("<SettingsForm />", () => {
   });
 
   it("is populated when data is available", async () => {
-    fetchMock.mockOnce(async () => {
+    fetchMock.mockResponse(async () => {
       return JSON.stringify({
         slug: "test-slug",
         name: "Test Name",
@@ -149,7 +149,11 @@ describe("<SettingsForm />", () => {
   });
 
   it("makes the correct API call on save existing", async () => {
-    fetchMock.mockOnce(async () => {
+    fetchMock.mockResponse(async (a) => {
+      if (a.url.includes("visualization")) {
+        return JSON.stringify({});
+      }
+
       return JSON.stringify({
         name: "Test Name",
         objectives: "Test objectives",
@@ -173,7 +177,7 @@ describe("<SettingsForm />", () => {
     let submitUrl;
     let formData;
     let requestMethod;
-    fetchMock.mockOnce(async (req) => {
+    fetchMock.mockResponse(async (req) => {
       if (req.body) {
         formData = await req.json();
       }
@@ -204,6 +208,7 @@ describe("<SettingsForm />", () => {
       name: "foo",
       status: ExperimentStatus.DRAFT,
       objectives: "Test objectives",
+      analysis: {},
     });
   });
 
@@ -219,7 +224,7 @@ describe("<SettingsForm />", () => {
       const { getByText } = renderWithRouter(
         wrapInExperimentProvider(<SettingsForm />),
       );
-      fetchMock.mockOnce(async () => {
+      fetchMock.mockResponse(async () => {
         return {
           status: 400,
           body: JSON.stringify({ [fieldName]: ["an error occurred"] }),

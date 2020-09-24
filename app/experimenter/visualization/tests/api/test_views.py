@@ -31,7 +31,10 @@ class TestVisualizationView(TestCase):
         self.assertEqual(response.status_code, 200)
 
         json_data = json.loads(response.content)
-        self.assertEqual({}, json_data)
+        self.assertEqual(
+            {"daily": None, "weekly": None, "overall": None, "show_analysis": False},
+            json_data,
+        )
 
     @parameterized.expand(
         [
@@ -44,7 +47,12 @@ class TestVisualizationView(TestCase):
     def test_analysis_results_view_data(self, status, mock_exists, mock_open):
         user_email = "user@example.com"
         DATA_ROW = {"point": 12, "upper": 13, "lower": 10}
-        FULL_DATA = {"daily": DATA_ROW, "weekly": DATA_ROW}
+        FULL_DATA = {
+            "daily": DATA_ROW,
+            "weekly": DATA_ROW,
+            "overall": DATA_ROW,
+            "show_analysis": False,
+        }
 
         class File:
             def read(self):

@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
@@ -16,23 +17,22 @@ def load_data_from_gcs(filename):
     )
 
 
+def get_data(slug, window):
+    data = {}
+    filename = f"""statistics_{slug}_{window}.json"""
+    data = load_data_from_gcs(filename)
+    return data
+
+
 @api_view()
 def analysis_results_view(request, slug):
-    experiment = get_object_or_404(NimbusExperiment.objects.filter(slug=slug))
-    experiment_data = {}
+    windows = ["daily", "weekly", "overall"]
 
+    experiment = get_object_or_404(NimbusExperiment.objects.filter(slug=slug))
+    experiment_data = {"show_analysis": settings.FEATURE_ANALYSIS}
     recipe_slug = experiment.slug.replace("-", "_")
 
-    daily_data_filename = f"""statistics_{recipe_slug}_daily.json"""
-    weekly_data_filename = f"""statistics_{recipe_slug}_weekly.json"""
-
-    daily_data = load_data_from_gcs(daily_data_filename)
-    weekly_data = load_data_from_gcs(weekly_data_filename)
-
-    if daily_data:
-        experiment_data["daily"] = daily_data
-
-    if weekly_data:
-        experiment_data["weekly"] = weekly_data
+    for window in windows:
+        experiment_data[window] = get_data(recipe_slug, window)
 
     return Response(experiment_data)

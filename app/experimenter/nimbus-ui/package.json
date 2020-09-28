@@ -10,6 +10,7 @@
     "lint:eslint": "eslint --color --max-warnings 0 --ext=.ts,.tsx .",
     "lint:tsc": "tsc --noEmit --project tsconfig.json",
     "storybook": "start-storybook -p 3001",
+    "build-storybook": "build-storybook",
     "eject": "react-scripts eject"
   },
   "jest": {

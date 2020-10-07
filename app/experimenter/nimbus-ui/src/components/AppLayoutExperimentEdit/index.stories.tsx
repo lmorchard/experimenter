@@ -4,10 +4,12 @@
 
 import React from "react";
 import { storiesOf } from "@storybook/react";
-import AppLayout from ".";
+import AppLayoutExperimentEdit from ".";
 
-storiesOf("components/AppLayout", module).add("default", () => (
-  <AppLayout>
-    <p>App contents go here</p>
-  </AppLayout>
+storiesOf("components/AppLayoutExperimentEdit", module).add("default", () => (
+  <div data-testid="app" style={{ height: "100vh" }}>
+    <AppLayoutExperimentEdit>
+      <p>App contents go here</p>
+    </AppLayoutExperimentEdit>
+  </div>
 ));

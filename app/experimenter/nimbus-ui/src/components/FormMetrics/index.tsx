@@ -25,6 +25,11 @@ type FormMetricsProps = {
   onNext: (ev: React.FormEvent) => void;
 };
 
+export const metricsFieldNames = [
+  "primaryProbeSetIds",
+  "secondaryProbeSetIds",
+] as const;
+
 type ProbeSet =
   | getExperiment_experimentBySlug_primaryProbeSets
   | getExperiment_experimentBySlug_secondaryProbeSets;
@@ -93,7 +98,7 @@ const FormMetrics = ({
     handleSubmit,
     reset,
     isSubmitted,
-  } = useCommonForm(
+  } = useCommonForm<typeof metricsFieldNames[number]>(
     defaultValues,
     isServerValid,
     submitErrors,

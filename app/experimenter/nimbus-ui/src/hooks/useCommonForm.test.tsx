@@ -4,14 +4,12 @@
 
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { overviewFieldNames } from "../components/FormOverview";
 import { Subject as OverviewSubject } from "../components/FormOverview/mocks";
+import { metricsFieldNames } from "../components/FormMetrics";
 import { Subject as MetricsSubject } from "../components/FormMetrics/mocks";
+import { audienceFieldNames } from "../components/FormAudience";
 import { Subject as AudienceSubject } from "../components/FormAudience/mocks";
-import {
-  overviewFieldNames,
-  metricsFieldNames,
-  audienceFieldNames,
-} from "./useCommonForm";
 import { mockExperimentQuery } from "../lib/mocks";
 
 describe("hooks/useCommonForm", () => {

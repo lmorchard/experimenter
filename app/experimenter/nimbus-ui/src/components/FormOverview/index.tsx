@@ -22,6 +22,13 @@ type FormOverviewProps = {
   onNext?: (ev: React.FormEvent) => void;
 };
 
+export const overviewFieldNames = [
+  "name",
+  "hypothesis",
+  "application",
+  "publicDescription",
+] as const;
+
 const FormOverview = ({
   isLoading,
   isServerValid,
@@ -50,7 +57,7 @@ const FormOverview = ({
     handleSubmit,
     reset,
     isSubmitted,
-  } = useCommonForm(
+  } = useCommonForm<typeof overviewFieldNames[number]>(
     defaultValues,
     isServerValid,
     submitErrors,

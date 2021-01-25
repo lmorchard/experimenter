@@ -94,15 +94,56 @@ describe("FormOverview", () => {
     }
   };
 
-  const checkExistingForm = async (expected: Record<string, string>) => {
+  const getDocumentationLinkFields = (index: number) => {
+    const testIdBase = `documentationLinks[${index}]`;
+    const titleField = screen.queryByTestId(
+      `${testIdBase}.title`,
+    ) as HTMLInputElement;
+    const linkField = screen.queryByTestId(
+      `${testIdBase}.link`,
+    ) as HTMLInputElement;
+    const removeButton = screen.queryByTestId(
+      `${testIdBase}.remove`,
+    ) as HTMLButtonElement;
+    return { titleField, linkField, removeButton };
+  };
+
+  const assertDocumentationLinkFields = (
+    value: { title: string; link: string },
+    index: number,
+  ) => {
+    const { titleField, linkField } = getDocumentationLinkFields(index);
+    expect(titleField.value).toEqual(value.title);
+    expect(linkField.value).toEqual(value.link);
+  };
+
+  const fillDocumentationLinkFields = (
+    value: { title: NimbusDocumentationLinkTitle; link: string },
+    index: number,
+  ) => {
+    const { titleField, linkField } = getDocumentationLinkFields(index);
+    fireEvent.change(titleField, {
+      target: { value: value.title },
+    });
+    fireEvent.change(linkField, {
+      target: { value: value.link },
+    });
+  };
+
+  const checkExistingForm = async (expected: Record<string, any>) => {
     for (const [labelText, fieldValue] of [
       ["Public name", expected.name],
       ["Hypothesis", expected.hypothesis],
       ["Public description", expected.publicDescription],
       ["Risk Mitigation Checklist Link", expected.riskMitigationLink],
+      ["documentationLinks", expected.documentationLinks],
     ]) {
-      const fieldName = screen.getByLabelText(labelText) as HTMLInputElement;
-      expect(fieldName.value).toEqual(fieldValue);
+      if (labelText === "documentationLinks") {
+        fieldValue.forEach(assertDocumentationLinkFields);
+      } else {
+        const fieldName = screen.getByLabelText(labelText) as HTMLInputElement;
+        expect(fieldName.value).toEqual(fieldValue);
+      }
     }
   };
 
@@ -132,6 +173,7 @@ describe("FormOverview", () => {
       hypothesis: experiment.hypothesis as string,
       publicDescription: experiment.publicDescription as string,
       riskMitigationLink: experiment.riskMitigationLink as string,
+      documentationLinks: experiment.documentationLinks as Record<string, any>,
     };
 
     const onSubmit = jest.fn();
@@ -182,6 +224,98 @@ describe("FormOverview", () => {
 
     await act(async () => void fireEvent.click(submitButton));
     expect(onSubmit).toHaveBeenCalled();
+  });
+
+  it("correctly renders, updates, filters, and deletes documentation links", async () => {
+    const { experiment } = mockExperimentQuery("boo", {
+      documentationLinks: [
+        {
+          __typename: "NimbusDocumentationLinkType",
+          title: NimbusDocumentationLinkTitle.DS_JIRA,
+          link: "https://bingo.bongo",
+        },
+      ],
+    });
+
+    const onSubmit = jest.fn();
+    render(<Subject {...{ experiment, onSubmit }} />);
+    const submitButton = screen.getByText("Save");
+    const addButton = screen.getByText("+ Add Link");
+
+    // Assert that the initial documentation link sets are rendered
+    experiment.documentationLinks!.map(assertDocumentationLinkFields);
+
+    // Update the values of the first set
+    await act(async () => {
+      experiment.documentationLinks![0] = {
+        __typename: "NimbusDocumentationLinkType",
+        title: NimbusDocumentationLinkTitle.ENG_TICKET,
+        link: "https://ooga.booga",
+      };
+      fillDocumentationLinkFields(experiment.documentationLinks![0], 0);
+    });
+
+    // Add a new set and populate it
+    await act(async () => void fireEvent.click(addButton));
+    await act(async () => {
+      experiment.documentationLinks!.push({
+        __typename: "NimbusDocumentationLinkType",
+        title: NimbusDocumentationLinkTitle.DESIGN_DOC,
+        link: "https://boingo.oingo",
+      });
+      fillDocumentationLinkFields(experiment.documentationLinks![1], 1);
+    });
+
+    // Add a new set and PARTIALLY populate it
+    // This set should be filtered out and therefor will
+    // not be added to expected output
+    await act(async () => void fireEvent.click(addButton));
+    await act(async () =>
+      fillDocumentationLinkFields(
+        {
+          title: NimbusDocumentationLinkTitle.DESIGN_DOC,
+          link: "",
+        },
+        2,
+      ),
+    );
+
+    // Add a new set, and populate it with the data from the second field
+    await act(async () => void fireEvent.click(addButton));
+    await act(async () => {
+      fillDocumentationLinkFields(experiment.documentationLinks![1], 3);
+    });
+
+    // Now delete the second set
+    await act(
+      async () =>
+        void fireEvent.click(getDocumentationLinkFields(1).removeButton),
+    );
+
+    expect(screen.queryAllByTestId("DocumentationLink").length).toEqual(
+      // Add one because this array doesn't include the field that will be filtered out
+      experiment.documentationLinks!.length + 1,
+    );
+
+    await act(async () => void fireEvent.click(submitButton));
+
+    experiment.documentationLinks!.forEach((documentationLink, index) => {
+      expect(onSubmit.mock.calls[0][0].documentationLinks[index].link).toEqual(
+        documentationLink.link,
+      );
+    });
+
+    // Now delete all the existing sets
+    for (let i = 0; i < 3; i++) {
+      await act(
+        async () =>
+          void fireEvent.click(getDocumentationLinkFields(0).removeButton),
+      );
+    }
+
+    // Assert that we are left with one default set
+    expect(screen.queryAllByTestId("DocumentationLink").length).toEqual(1);
+    assertDocumentationLinkFields({ title: "", link: "" }, 0);
   });
 
   it("disables create submission when loading", async () => {

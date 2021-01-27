@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { useCallback, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getExperiment_experimentBySlug } from "../../types/getExperiment";
 import { NimbusDocumentationLinkTitle } from "../../types/globalTypes";
 
@@ -21,45 +21,54 @@ export type AnnotatedDocumentationLink = DefaultDocumentationLink & {
 export function useDocumentationLinks(
   experiment?: getExperiment_experimentBySlug | null,
 ) {
-  const setup = useMemo(
-    () => setupDocumentationLinks(experiment?.documentationLinks),
-    [experiment],
+  const [state, setState] = useState({
+    lastIndex: 0,
+    documentationLinks: [] as AnnotatedDocumentationLink[],
+  });
+
+  const stateAPI = useMemo(
+    () => ({
+      addDocumentationLink: () =>
+        setState(({ lastIndex, documentationLinks }) => ({
+          lastIndex: lastIndex + 1,
+          documentationLinks: [
+            ...documentationLinks,
+            emptyDocumentationLink(lastIndex + 1),
+          ],
+        })),
+      removeDocumentationLink: (
+        documentationLink: AnnotatedDocumentationLink,
+      ) =>
+        setState(({ lastIndex, documentationLinks }) => {
+          const remaining = documentationLinks.filter(
+            (d) => d.key !== documentationLink.key,
+          );
+          if (remaining.length > 0) {
+            return {
+              lastIndex,
+              documentationLinks: remaining,
+            };
+          }
+          return {
+            lastIndex: lastIndex + 1,
+            documentationLinks: [emptyDocumentationLink(lastIndex + 1)],
+          };
+        }),
+    }),
+    [setState],
   );
-  const { initialDocumentationLinks } = setup;
-  let { lastIndex } = setup;
 
-  const [documentationLinks, setDocumentationLinks] = useState<
-    AnnotatedDocumentationLink[]
-  >(initialDocumentationLinks);
-
-  const addDocumentationLink = useCallback(() => {
-    setDocumentationLinks((existing) => {
-      lastIndex++;
-      return [...existing, emptyDocumentationLink(lastIndex)];
+  useEffect(() => {
+    const documentationLinks = setupDocumentationLinks(
+      experiment?.documentationLinks,
+    );
+    setState({
+      lastIndex: documentationLinks.length,
+      documentationLinks,
     });
-  }, [lastIndex]);
+  }, [experiment]);
 
-  const removeDocumentationLink = useCallback(
-    (documentationLink: AnnotatedDocumentationLink) => {
-      setDocumentationLinks((existing) => {
-        let remaining = existing.filter((d) => d.key !== documentationLink.key);
-
-        if (!remaining.length) {
-          lastIndex++;
-          remaining = [emptyDocumentationLink(lastIndex)];
-        }
-
-        return remaining;
-      });
-    },
-    [lastIndex],
-  );
-
-  return {
-    documentationLinks,
-    addDocumentationLink,
-    removeDocumentationLink,
-  };
+  return { ...state, ...stateAPI };
 }
 
 export const setupDocumentationLinks = (
@@ -70,10 +79,7 @@ export const setupDocumentationLinks = (
     ? (existing! as DefaultDocumentationLink[]).map(annotateDocumentationLink)
     : [emptyDocumentationLink(0)];
 
-  return {
-    initialDocumentationLinks,
-    lastIndex: initialDocumentationLinks.length - 1,
-  };
+  return initialDocumentationLinks;
 };
 
 export const emptyDocumentationLink = (index: number) => {

@@ -7,6 +7,7 @@ import { RouteComponentProps } from "@reach/router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import Alert from "react-bootstrap/Alert";
 import { UPDATE_EXPERIMENT_MUTATION } from "../../gql/experiments";
+import { useConfig } from "../../hooks/useConfig";
 import { ReactComponent as Check } from "../../images/check.svg";
 import { SUBMIT_ERROR } from "../../lib/constants";
 import { getStatus } from "../../lib/experiment";
@@ -18,15 +19,22 @@ import {
 import { updateExperiment_updateExperiment as UpdateExperiment } from "../../types/updateExperiment";
 import AppLayoutWithExperiment from "../AppLayoutWithExperiment";
 import Summary from "../Summary";
+import FormApproveOrRejectLaunch from "./FormApproveOrRejectLaunch";
 import FormLaunchDraftToPreview from "./FormLaunchDraftToPreview";
 import FormLaunchDraftToReview from "./FormLaunchDraftToReview";
 import FormLaunchPreviewToReview from "./FormLaunchPreviewToReview";
 
 const PageRequestReview = ({
   polling = true,
+  isLaunchRequested = false,
+  launchRequestedBy = "",
 }: {
   polling?: boolean;
+  isLaunchRequested?: boolean;
+  launchRequestedBy?: string;
 } & RouteComponentProps) => {
+  const { featureFlags } = useConfig();
+
   const [submitError, setSubmitError] = useState<string | null>(null);
   const currentExperiment = useRef<getExperiment_experimentBySlug>();
   const refetchReview = useRef<() => void>();
@@ -115,46 +123,65 @@ const PageRequestReview = ({
                 {submitError}
               </Alert>
             )}
-            {status.review && (
-              <Alert
-                data-testid="submit-success"
-                variant="success"
-                className="bg-transparent text-success"
-              >
-                <p className="my-1" data-testid="in-review-label">
-                  <Check className="align-top" /> All set! Your experiment will
-                  launch as soon as it is approved.
-                </p>
-              </Alert>
-            )}
-            {status.draft &&
-              (showLaunchDraftToReview ? (
-                <FormLaunchDraftToReview
-                  {...{
-                    isLoading: loading,
-                    onSubmit: onLaunchClicked,
-                    onCancel: toggleShowLaunchDraftToReview,
-                    onLaunchToPreview: onLaunchToPreviewClicked,
-                  }}
-                />
+            {
+              /* istanbul ignore next */ featureFlags.exp1055ReviewFlow ? (
+                <>
+                  {isLaunchRequested && (
+                    <FormApproveOrRejectLaunch
+                      {...{
+                        launchRequestedBy,
+                        isLoading: false,
+                        onApprove: () => {},
+                        onReject: () => {},
+                      }}
+                    />
+                  )}
+                </>
               ) : (
-                <FormLaunchDraftToPreview
-                  {...{
-                    isLoading: loading,
-                    onSubmit: onLaunchToPreviewClicked,
-                    onLaunchWithoutPreview: toggleShowLaunchDraftToReview,
-                  }}
-                />
-              ))}
-            {status.preview && (
-              <FormLaunchPreviewToReview
-                {...{
-                  isLoading: loading,
-                  onSubmit: onLaunchClicked,
-                  onBackToDraft: onBackToDraftClicked,
-                }}
-              />
-            )}
+                <>
+                  {status.review && (
+                    <Alert
+                      data-testid="submit-success"
+                      variant="success"
+                      className="bg-transparent text-success"
+                    >
+                      <p className="my-1" data-testid="in-review-label">
+                        <Check className="align-top" /> All set! Your experiment
+                        will launch as soon as it is approved.
+                      </p>
+                    </Alert>
+                  )}
+                  {status.draft &&
+                    (showLaunchDraftToReview ? (
+                      <FormLaunchDraftToReview
+                        {...{
+                          isLoading: loading,
+                          onSubmit: onLaunchClicked,
+                          onCancel: toggleShowLaunchDraftToReview,
+                          onLaunchToPreview: onLaunchToPreviewClicked,
+                        }}
+                      />
+                    ) : (
+                      <FormLaunchDraftToPreview
+                        {...{
+                          isLoading: loading,
+                          onSubmit: onLaunchToPreviewClicked,
+                          onLaunchWithoutPreview: toggleShowLaunchDraftToReview,
+                        }}
+                      />
+                    ))}
+                  {status.preview && (
+                    <FormLaunchPreviewToReview
+                      {...{
+                        isLoading: loading,
+                        onSubmit: onLaunchClicked,
+                        onBackToDraft: onBackToDraftClicked,
+                      }}
+                    />
+                  )}
+                </>
+              )
+            }
             <Summary {...{ experiment }} />
           </>
         );

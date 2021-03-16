@@ -5,6 +5,7 @@
 import React from "react";
 import PageRequestReview from ".";
 import { UPDATE_EXPERIMENT_MUTATION } from "../../gql/experiments";
+import { MockConfigContext } from "../../hooks";
 import { mockExperimentMutation, mockExperimentQuery } from "../../lib/mocks";
 import { RouterSlugProvider } from "../../lib/test-utils";
 import { NimbusExperimentStatus } from "../../types/globalTypes";
@@ -38,4 +39,23 @@ export const Subject = ({
   <RouterSlugProvider {...{ mocks }}>
     <PageRequestReview polling={false} />
   </RouterSlugProvider>
+);
+
+export const SubjectEXP1055 = ({
+  mocks = [mock, createMutationMock(experiment.id!)],
+  ...pageProps
+}: {
+  mocks?: React.ComponentProps<typeof RouterSlugProvider>["mocks"];
+} & React.ComponentProps<typeof PageRequestReview>) => (
+  <MockConfigContext.Provider
+    value={{
+      featureFlags: {
+        exp1055ReviewFlow: true,
+      },
+    }}
+  >
+    <RouterSlugProvider {...{ mocks }}>
+      <PageRequestReview polling={false} {...pageProps} />
+    </RouterSlugProvider>
+  </MockConfigContext.Provider>
 );

@@ -4,9 +4,10 @@
 
 import { useMutation } from "@apollo/client";
 import { RouteComponentProps } from "@reach/router";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Alert from "react-bootstrap/Alert";
 import { UPDATE_EXPERIMENT_MUTATION } from "../../gql/experiments";
+import { useBooleanState } from "../../hooks/useBooleanState";
 import { useConfig } from "../../hooks/useConfig";
 import { ReactComponent as Check } from "../../images/check.svg";
 import { SUBMIT_ERROR } from "../../lib/constants";
@@ -23,10 +24,14 @@ import FormApproveOrRejectLaunch from "./FormApproveOrRejectLaunch";
 import FormLaunchDraftToPreview from "./FormLaunchDraftToPreview";
 import FormLaunchDraftToReview from "./FormLaunchDraftToReview";
 import FormLaunchPreviewToReview from "./FormLaunchPreviewToReview";
+import FormRejectReason from "./FormRejectReason";
 
 const PageRequestReview = ({
+  /* istanbul ignore next - only used in tests & stories */
   polling = true,
+  /* istanbul ignore next until EXP-1055 & EXP-1062 done */
   isLaunchRequested = false,
+  /* istanbul ignore next until EXP-1055 & EXP-1062 done */
   launchRequestedBy = "",
 }: {
   polling?: boolean;
@@ -44,12 +49,23 @@ const PageRequestReview = ({
     { input: ExperimentInput }
   >(UPDATE_EXPERIMENT_MUTATION);
 
-  const [showLaunchDraftToReview, setShowLaunchDraftToReview] = useState(false);
+  const {
+    state: showLaunchDraftToReview,
+    toggleState: toggleShowLaunchDraftToReview,
+    setStateFalse: hideLaunchDraftToReview,
+  } = useBooleanState();
 
-  const toggleShowLaunchDraftToReview = useCallback(
-    () => setShowLaunchDraftToReview(!showLaunchDraftToReview),
-    [showLaunchDraftToReview, setShowLaunchDraftToReview],
-  );
+  const {
+    state: shouldShowLaunchRejectionForm,
+    setStateTrue: showLaunchRejectionForm,
+    setStateFalse: hideLaunchRejectionForm,
+  } = useBooleanState();
+
+  /* istanbul ignore next until EXP-1055 & EXP-1062 done */
+  const shouldShowLaunchApproveOrReject =
+    featureFlags.exp1055ReviewFlow &&
+    !shouldShowLaunchRejectionForm &&
+    isLaunchRequested;
 
   const [
     onLaunchToPreviewClicked,
@@ -85,7 +101,7 @@ const PageRequestReview = ({
           }
 
           refetchReview.current!();
-          setShowLaunchDraftToReview(false);
+          hideLaunchDraftToReview();
         } catch (error) {
           setSubmitError(SUBMIT_ERROR);
         }
@@ -123,65 +139,68 @@ const PageRequestReview = ({
                 {submitError}
               </Alert>
             )}
-            {
-              /* istanbul ignore next */ featureFlags.exp1055ReviewFlow ? (
-                <>
-                  {isLaunchRequested && (
-                    <FormApproveOrRejectLaunch
-                      {...{
-                        launchRequestedBy,
-                        isLoading: false,
-                        onApprove: () => {},
-                        onReject: () => {},
-                      }}
-                    />
-                  )}
-                </>
+            {status.draft &&
+              /* istanbul ignore next until EXP-1055 & EXP-1062 done */ (shouldShowLaunchRejectionForm ? (
+                <FormRejectReason
+                  {...{
+                    isLoading: false,
+                    isServerValid: true,
+                    submitErrors: {},
+                    setSubmitErrors: () => {},
+                    onSubmit: () => {},
+                    onCancel: hideLaunchRejectionForm,
+                  }}
+                />
+              ) : /* istanbul ignore next until EXP-1055 & EXP-1062 done */ shouldShowLaunchApproveOrReject ? (
+                <FormApproveOrRejectLaunch
+                  {...{
+                    launchRequestedBy,
+                    isLoading: false,
+                    onApprove: () => {},
+                    onReject: showLaunchRejectionForm,
+                  }}
+                />
+              ) : showLaunchDraftToReview ? (
+                <FormLaunchDraftToReview
+                  {...{
+                    isLoading: loading,
+                    onSubmit: onLaunchClicked,
+                    onCancel: toggleShowLaunchDraftToReview,
+                    onLaunchToPreview: onLaunchToPreviewClicked,
+                  }}
+                />
               ) : (
-                <>
-                  {status.review && (
-                    <Alert
-                      data-testid="submit-success"
-                      variant="success"
-                      className="bg-transparent text-success"
-                    >
-                      <p className="my-1" data-testid="in-review-label">
-                        <Check className="align-top" /> All set! Your experiment
-                        will launch as soon as it is approved.
-                      </p>
-                    </Alert>
-                  )}
-                  {status.draft &&
-                    (showLaunchDraftToReview ? (
-                      <FormLaunchDraftToReview
-                        {...{
-                          isLoading: loading,
-                          onSubmit: onLaunchClicked,
-                          onCancel: toggleShowLaunchDraftToReview,
-                          onLaunchToPreview: onLaunchToPreviewClicked,
-                        }}
-                      />
-                    ) : (
-                      <FormLaunchDraftToPreview
-                        {...{
-                          isLoading: loading,
-                          onSubmit: onLaunchToPreviewClicked,
-                          onLaunchWithoutPreview: toggleShowLaunchDraftToReview,
-                        }}
-                      />
-                    ))}
-                  {status.preview && (
-                    <FormLaunchPreviewToReview
-                      {...{
-                        isLoading: loading,
-                        onSubmit: onLaunchClicked,
-                        onBackToDraft: onBackToDraftClicked,
-                      }}
-                    />
-                  )}
-                </>
-              )
-            }
+                <FormLaunchDraftToPreview
+                  {...{
+                    isLoading: loading,
+                    onSubmit: onLaunchToPreviewClicked,
+                    onLaunchWithoutPreview: toggleShowLaunchDraftToReview,
+                  }}
+                />
+              ))}
+
+            {status.review && (
+              <Alert
+                data-testid="submit-success"
+                variant="success"
+                className="bg-transparent text-success"
+              >
+                <p className="my-1" data-testid="in-review-label">
+                  <Check className="align-top" /> All set! Your experiment will
+                  launch as soon as it is approved.
+                </p>
+              </Alert>
+            )}
+
+            {status.preview && (
+              <FormLaunchPreviewToReview
+                {...{
+                  isLoading: loading,
+                  onSubmit: onLaunchClicked,
+                  onBackToDraft: onBackToDraftClicked,
+                }}
+              />
+            )}
             <Summary {...{ experiment }} />
           </>
         );

@@ -10,3 +10,4 @@ export * from "./useConfig";
 export * from "./useExitWarning";
 export * from "./useExperiment";
 export * from "./useOutcomes";
+export * from "./useBooleanState";

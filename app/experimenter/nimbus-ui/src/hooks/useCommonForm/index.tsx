@@ -8,12 +8,13 @@ import { useForm } from "./useForm";
 
 export type SubmitErrorRecord = Record<string, string[]>;
 export type SubmitErrors = Record<string, string[] | SubmitErrorRecord[]>;
+export type SetSubmitErrors = React.Dispatch<React.SetStateAction<Record<string, any>>>;
 
 export function useCommonForm<FieldNames extends string>(
   defaultValues: Record<string, any>,
   isServerValid: boolean,
   submitErrors: SubmitErrors,
-  setSubmitErrors: React.Dispatch<React.SetStateAction<Record<string, any>>>,
+  setSubmitErrors: SetSubmitErrors,
 ) {
   const formMethods = useForm(defaultValues);
   const {

@@ -58,25 +58,26 @@ storiesOf("pages/RequestReview/EXP1055", module)
 
 storiesOf("pages/RequestReview/EXP1055/forms", module)
   .addDecorator(withLinks)
+  .addDecorator((story) => <div className="p-5">{story()}</div>)
   .add("FormApproveOrRejectLaunch", () => (
-    <p className="p-5">
-      <FormApproveOrRejectLaunch
-        {...{
-          launchRequestedBy: "jdoe@mozilla.com",
-          isLoading: false,
-          onApprove: action("approve"),
-          onReject: action("reject"),
-        }}
-      />
-    </p>
-  ))  .add("FormRejectReason", () => (
-    <p className="p-5">
-      <FormRejectReason
-        {...{
-          isLoading: false,
-          onSubmit: action("submit"),
-          onCancel: action("cancel"),
-        }}
-      />
-    </p>
+    <FormApproveOrRejectLaunch
+      {...{
+        launchRequestedBy: "jdoe@mozilla.com",
+        isLoading: false,
+        onApprove: action("approve"),
+        onReject: action("reject"),
+      }}
+    />
+  ))
+  .add("FormRejectReason", () => (
+    <FormRejectReason
+      {...{
+        isLoading: false,
+        isServerValid: true,
+        submitErrors: {},
+        setSubmitErrors: () => {},
+        onSubmit: action("submit"),
+        onCancel: action("cancel"),
+      }}
+    />
   ));

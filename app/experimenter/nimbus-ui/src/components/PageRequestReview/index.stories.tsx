@@ -10,6 +10,7 @@ import PageRequestReview from ".";
 import { mockExperimentQuery } from "../../lib/mocks";
 import { RouterSlugProvider } from "../../lib/test-utils";
 import { NimbusExperimentStatus } from "../../types/globalTypes";
+import FormApproveConfirm from "./FormApproveConfirm";
 import FormApproveOrRejectLaunch from "./FormApproveOrRejectLaunch";
 import FormRejectReason from "./FormRejectReason";
 import { mock, Subject, SubjectEXP1055 } from "./mocks";
@@ -78,6 +79,14 @@ storiesOf("pages/RequestReview/EXP1055/forms", module)
         setSubmitErrors: () => {},
         onSubmit: action("submit"),
         onCancel: action("cancel"),
+      }}
+    />
+  ))
+  .add("FormApproveConfirm", () => (
+    <FormApproveConfirm
+      {...{
+        isLoading: false,
+        onConfirm: action("confirm"),
       }}
     />
   ));

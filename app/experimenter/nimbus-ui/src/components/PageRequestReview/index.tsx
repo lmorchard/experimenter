@@ -20,6 +20,7 @@ import {
 import { updateExperiment_updateExperiment as UpdateExperiment } from "../../types/updateExperiment";
 import AppLayoutWithExperiment from "../AppLayoutWithExperiment";
 import Summary from "../Summary";
+import FormApproveConfirm from "./FormApproveConfirm";
 import FormApproveOrRejectLaunch from "./FormApproveOrRejectLaunch";
 import FormLaunchDraftToPreview from "./FormLaunchDraftToPreview";
 import FormLaunchDraftToReview from "./FormLaunchDraftToReview";
@@ -59,6 +60,12 @@ const PageRequestReview = ({
     state: shouldShowLaunchRejectionForm,
     setStateTrue: showLaunchRejectionForm,
     setStateFalse: hideLaunchRejectionForm,
+  } = useBooleanState();
+
+  const {
+    state: shouldShowLaunchApprovalConfirmationForm,
+    setStateTrue: showLaunchApprovalConfirmationForm,
+    setStateFalse: hideLaunchApprovalConfirmationForm,
   } = useBooleanState();
 
   /* istanbul ignore next until EXP-1055 & EXP-1062 done */
@@ -140,44 +147,51 @@ const PageRequestReview = ({
               </Alert>
             )}
             {status.draft &&
-              /* istanbul ignore next until EXP-1055 & EXP-1062 done */ (shouldShowLaunchRejectionForm ? (
-                <FormRejectReason
-                  {...{
-                    isLoading: false,
-                    isServerValid: true,
-                    submitErrors: {},
-                    setSubmitErrors: () => {},
-                    onSubmit: () => {},
-                    onCancel: hideLaunchRejectionForm,
-                  }}
-                />
-              ) : /* istanbul ignore next until EXP-1055 & EXP-1062 done */ shouldShowLaunchApproveOrReject ? (
-                <FormApproveOrRejectLaunch
-                  {...{
-                    launchRequestedBy,
-                    isLoading: false,
-                    onApprove: () => {},
-                    onReject: showLaunchRejectionForm,
-                  }}
-                />
-              ) : showLaunchDraftToReview ? (
-                <FormLaunchDraftToReview
-                  {...{
-                    isLoading: loading,
-                    onSubmit: onLaunchClicked,
-                    onCancel: toggleShowLaunchDraftToReview,
-                    onLaunchToPreview: onLaunchToPreviewClicked,
-                  }}
-                />
-              ) : (
-                <FormLaunchDraftToPreview
-                  {...{
-                    isLoading: loading,
-                    onSubmit: onLaunchToPreviewClicked,
-                    onLaunchWithoutPreview: toggleShowLaunchDraftToReview,
-                  }}
-                />
-              ))}
+            /* istanbul ignore next until EXP-1055 & EXP-1062 done */ shouldShowLaunchApprovalConfirmationForm ? (
+              <FormApproveConfirm
+                {...{
+                  isLoading: false,
+                  onConfirm: () => {},
+                }}
+              />
+            ) : /* istanbul ignore next until EXP-1055 & EXP-1062 done */ shouldShowLaunchRejectionForm ? (
+              <FormRejectReason
+                {...{
+                  isLoading: false,
+                  isServerValid: true,
+                  submitErrors: {},
+                  setSubmitErrors: () => {},
+                  onSubmit: () => {},
+                  onCancel: hideLaunchRejectionForm,
+                }}
+              />
+            ) : /* istanbul ignore next until EXP-1055 & EXP-1062 done */ shouldShowLaunchApproveOrReject ? (
+              <FormApproveOrRejectLaunch
+                {...{
+                  launchRequestedBy,
+                  isLoading: false,
+                  onApprove: showLaunchApprovalConfirmationForm,
+                  onReject: showLaunchRejectionForm,
+                }}
+              />
+            ) : showLaunchDraftToReview ? (
+              <FormLaunchDraftToReview
+                {...{
+                  isLoading: loading,
+                  onSubmit: onLaunchClicked,
+                  onCancel: toggleShowLaunchDraftToReview,
+                  onLaunchToPreview: onLaunchToPreviewClicked,
+                }}
+              />
+            ) : (
+              <FormLaunchDraftToPreview
+                {...{
+                  isLoading: loading,
+                  onSubmit: onLaunchToPreviewClicked,
+                  onLaunchWithoutPreview: toggleShowLaunchDraftToReview,
+                }}
+              />
+            )}
 
             {status.review && (
               <Alert
